@@ -91,6 +91,7 @@ typedef struct
     unsigned rouletting_threshold;
     float med_n_water;
     float med_speed_m_ns;
+    uint8_t med_layers;
 
     // Surface
     float sur_sigma;

@@ -1,36 +1,38 @@
-HDR = src/settings.h src/simulation.h src/simulation_file.h src/results.h src/photon_block.h src/utilities.h src/status.h src/urand.h src/processing.h src/configuration.h
-BDY = src/settings.c src/simulation.c src/simulation_file.c src/results.c src/photon_block.c src/utilities.c src/status.c src/urand.c src/processing.c src/main.c
-SRC = $(BDY) $(HDR)
-
 FLAGS = -lm -fopenmp -lrt `pkg-config --cflags --libs json-glib-1.0`
 
-main : uwsim
+BIN		:= bin
+SRC		:= src
+INCLUDE	:= include
 
-all : uwsim uwsim_dbg
+EXECUTABLE	:= uwsim
 
-install : /usr/local/bin/uwsim
+main : $(EXECUTABLE)
 
-/usr/local/bin/uwsim : uwsim
+all : $(EXECUTABLE) $(EXECUTABLE)_dbg
+
+install : /usr/local/bin/$(EXECUTABLE)
+
+/usr/local/bin/$(EXECUTABLE) : $(EXECUTABLE)
 	@if [ $(USER) = "root" ]; then\
-		cp uwsim /usr/local/bin/;\
+		cp $(EXECUTABLE) /usr/local/bin/;\
 	else\
 		echo "You must be root";\
 	fi
 
 uninstall :
 	@if [ $(USER) = "root" ]; then\
-		rm -fv /usr/local/bin/uwsim;\
+		rm -fv /usr/local/bin/$(EXECUTABLE);\
 	else\
 		echo "You must be root";\
 	fi
 
-uwsim : $(SRC)
-	gcc -Wall -O1 -o uwsim $(BDY) $(FLAGS)
+$(EXECUTABLE) : $(SRC)/*.c
+	gcc -Wall -O1 $^ -o $(BIN)/$@ $(FLAGS) -I$(INCLUDE)
 
-debug : uwsim_dbg
+debug : $(EXECUTABLE)_dbg
 
-uwsim_dbg : $(SRC)
-	gcc -Wall -g -o uwsim_dbg $(BDY) $(FLAGS)
+$(EXECUTABLE)_dbg : $(SRC)/*.c
+	gcc -Wall -g $^ -o $(BIN)/$@ $(FLAGS) -I$(INCLUDE)
 
 clean :
-	@rm -fv uwsim uwsim_dbg
+	@rm -fv $(BIN)/$(EXECUTABLE) $(BIN)/$(EXECUTABLE)_dbg

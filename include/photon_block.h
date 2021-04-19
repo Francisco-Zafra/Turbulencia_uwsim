@@ -23,6 +23,7 @@ typedef struct
     float ux, uy, uz;
     bool intercepted;
     bool received;
+    uint8_t layer;       // añado layer para que se guarde en qué capa está del medio. Cada capa tendrá un índice de refracción
 }
 Photon;
 

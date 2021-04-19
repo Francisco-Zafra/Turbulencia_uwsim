@@ -7,6 +7,7 @@
 
 #include "urand.h"
 
+#include <stdio.h> //añadido para el printf
 
 #define UZ_THRESHOLD 0.99999f
 
@@ -278,6 +279,7 @@ void photon_emit(Photon * photon, Simulation * sim)
     photon->reflected = false;
     photon->intercepted = false;
     photon->received = false;
+    photon->layer = 1u;    // se inicializa estando en la capa 1 por si se considera modelar el medio con múltiples capas y diferentes índices de refracción
 }
 
 
@@ -293,9 +295,16 @@ void photon_move(Photon * photon, Simulation * sim)
     float r;
     float distance_to_surface;
     float distance_to_rec;
+    float distance_to_boundary;
     float theta, phi;
     bool intercepted;
     bool out;
+    bool boundary;
+    float n_water_variable[10] = {0, 1.33f, 1.23f, 1.3f, 1.29f, 1.32f, 1.15f, 1.33f, 1.28f, 1.3f};
+    float n_quotient;
+    float boundary_cos_critical_angle;
+    float uz_exit;
+    float rp,rs,R,T;
 
     // This initialization is important in the cases when there is surface but
     // not rotation is required
@@ -365,6 +374,46 @@ void photon_move(Photon * photon, Simulation * sim)
         photon->y += r * photon->uy;
         photon->z += r * photon->uz;
 
+        boundary=(photon->layer<sim->med_layers)&&(photon->z>-(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
+        
+        if (boundary)    //chequeamos cambio de capa
+        {
+            n_quotient=n_water_variable[photon->layer+1]/n_water_variable[photon->layer];
+            boundary_cos_critical_angle= sqrtf(1.0f - powf(n_quotient, 2.0f));
+
+            if((n_water_variable[photon->layer]>n_water_variable[photon->layer+1])&&(photon->uz < boundary_cos_critical_angle))
+                    // si reflexión total en la transición de medios entonces se descarta el fotón
+                    break;
+
+            // Bring back photon to boundary position
+            distance_to_boundary = (photon->z+(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers))) / photon->uz;
+            photon->z -= distance_to_boundary * photon->uz;
+            photon->layer += 1;
+
+            uz_exit = sqrtf(1.0f - powf(n_quotient, -2.0f) * (1.0f - photon->uz * photon->uz));
+
+            // Apply Fresnel equations
+            rp = (n_water_variable[photon->layer+1] * photon->uz -
+                        n_water_variable[photon->layer] * uz_exit) /
+                        (n_water_variable[photon->layer+1] * photon->uz +
+                        n_water_variable[photon->layer] * uz_exit);
+            rs = (n_water_variable[photon->layer] * photon->uz -
+                        n_water_variable[photon->layer+1] * uz_exit) /
+                        (n_water_variable[photon->layer] * photon->uz +
+                        n_water_variable[photon->layer+1] * uz_exit);
+            R = (rp * rp + rs  *rs) / 2.0f;
+            T = 1.0f - R;
+            // Calculate final weight
+            photon->weight *= T;
+            photon->uz = uz_exit;
+
+            // Photon must travel the remain distance to fulfill Beer-Lambert law
+            photon->z += distance_to_boundary * photon->uz;
+
+            //printf("coordenada z del fotón %5.2f\n",photon->z);
+            //printf("capa %d\n",photon->layer);
+        }
+        
         // Check interceptions with receptor (and surface, if there is)
         if(sim->there_is_surface)
         {

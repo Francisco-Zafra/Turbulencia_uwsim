@@ -66,6 +66,7 @@
 #define DOC_704 "Set photon block size for parallelization to <value>"
 #define DOC_l   "Set length factor, l,  to <value>. This factor set the events threshold to l times the scattering length. The scattering length is the average of the number of events suffered by a photon when this travels the link length"
 #define DOC_q   "Hide configuration and results output"
+#define DOC_L   "Set number of layers to <value>" //número de capas
 
 // Option IDs
 #define ID_P    0x01
@@ -99,6 +100,7 @@
 #define ID_703  0x1D
 #define ID_S    0x1E
 #define ID_l    0x1F
+#define ID_L    0x20    //identificador numero de capas
 
 
 #endif

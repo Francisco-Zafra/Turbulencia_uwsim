@@ -166,6 +166,9 @@ int main(int argc , char* argv[])
     settings_select_family(settings, "medium");
     settings_add_str(settings, "phase function", 'P', DOC_P, ID_P, 0, "hg",
                      SUP_p);
+
+    settings_add_dbl(settings, "layers", 'L', DOC_L, ID_L, 0, 1.0);
+
     settings_add_dbl(settings, "g", 'g', DOC_g, ID_g, 0, 0.924);
     settings_add_dbl(settings, "attenuation", 'c', DOC_c, ID_c, 0, 2.19);
     settings_add_dbl(settings, "albedo", 'w', DOC_w, ID_w, 0, 0.83);
