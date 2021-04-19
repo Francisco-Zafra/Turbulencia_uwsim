@@ -14,8 +14,6 @@
 #include "simulation.h"
 #include "simulation_file.h"
 
-//TEST
-
 /* --- Signals management --------------------------------------------------- */
 
 static bool exit_request = false;
