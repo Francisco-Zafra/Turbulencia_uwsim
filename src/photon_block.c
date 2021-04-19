@@ -303,7 +303,9 @@ void photon_move(Photon * photon, Simulation * sim)
     float n_water_variable[10] = {0, 1.33f, 1.23f, 1.3f, 1.29f, 1.32f, 1.15f, 1.33f, 1.28f, 1.3f};
     float n_quotient;
     float boundary_cos_critical_angle;
-    float uz_exit;
+    float boundary_normal_x = 0, boundary_normal_y = 0, boundary_normal_z = 1; //Probamos con n = (0,0,1)
+    float ux_exit, uy_exit, uz_exit;
+    float beta;
     float rp,rs,R,T;
 
     // This initialization is important in the cases when there is surface but
@@ -374,23 +376,48 @@ void photon_move(Photon * photon, Simulation * sim)
         photon->y += r * photon->uy;
         photon->z += r * photon->uz;
 
-        boundary=(photon->layer<sim->med_layers)&&(photon->z>-(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
+        // Tengo >2 layers? Mi pos z es mayor que alguna layrer?
+        boundary=(photon->layer < sim->med_layers)&&(photon->z > -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
         
-        if (boundary)    //chequeamos cambio de capa
+        while (boundary)    //chequeamos cambio de capa
         {
             n_quotient=n_water_variable[photon->layer+1]/n_water_variable[photon->layer];
             boundary_cos_critical_angle= sqrtf(1.0f - powf(n_quotient, 2.0f));
 
-            if((n_water_variable[photon->layer]>n_water_variable[photon->layer+1])&&(photon->uz < boundary_cos_critical_angle))
-                    // si reflexión total en la transición de medios entonces se descarta el fotón
-                    break;
+            if((n_water_variable[photon->layer]>n_water_variable[photon->layer+1])&&(photon->uz < boundary_cos_critical_angle)){
+                // si reflexión total en la transición de medios entonces se descarta el fotón
+                break;
+            }
 
             // Bring back photon to boundary position
             distance_to_boundary = (photon->z+(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers))) / photon->uz;
+            photon->x -= distance_to_boundary * photon->ux;
+            photon->y -= distance_to_boundary * photon->uy;
             photon->z -= distance_to_boundary * photon->uz;
             photon->layer += 1;
 
-            uz_exit = sqrtf(1.0f - powf(n_quotient, -2.0f) * (1.0f - photon->uz * photon->uz));
+            //Calculate new photon direction
+            long b = 2*n_quotient*dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z);
+            long c = 1 - powf(n_quotient, 2.0f);
+
+            beta = (-b + sqrtf(powf(b,2) - 4*c)) / 2;        
+            ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
+            uy_exit = n_quotient * photon->uy + beta * boundary_normal_y;
+            uz_exit = n_quotient * photon->uz + beta * boundary_normal_z;
+            if ((dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z)>0 &&
+                dot_product(ux_exit,uy_exit,uz_exit,boundary_normal_x,boundary_normal_y,boundary_normal_z)<0) ||
+                (dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z)<0 &&
+                dot_product(ux_exit,uy_exit,uz_exit,boundary_normal_x,boundary_normal_y,boundary_normal_z)>0))
+            {
+                beta = (-b - sqrtf(powf(b,2) - 4*c)) / 2;
+                ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
+                uy_exit = n_quotient * photon->uy + beta * boundary_normal_y;
+                uz_exit = n_quotient * photon->uz + beta * boundary_normal_z;         
+            }
+
+            //printf("coordenada del fotón (%f,%f,%f)\n",photon->x, photon->y, photon->z);
+            //printf("direccion del fotón (%f,%f,%f)\n",ux_exit, uy_exit, uz_exit);
+            //printf("capa %d\n",photon->layer);
 
             // Apply Fresnel equations
             rp = (n_water_variable[photon->layer+1] * photon->uz -
@@ -405,13 +432,22 @@ void photon_move(Photon * photon, Simulation * sim)
             T = 1.0f - R;
             // Calculate final weight
             photon->weight *= T;
+
+            //Update photon trayectory 
+            photon->ux = ux_exit;
+            photon->uy = uy_exit;
             photon->uz = uz_exit;
 
             // Photon must travel the remain distance to fulfill Beer-Lambert law
+            photon->x += distance_to_boundary * photon->ux;
+            photon->y += distance_to_boundary * photon->uy;
             photon->z += distance_to_boundary * photon->uz;
 
             //printf("coordenada z del fotón %5.2f\n",photon->z);
             //printf("capa %d\n",photon->layer);
+
+            //Por si me he saltado varias layers
+            boundary=(photon->layer < sim->med_layers)&&(photon->z > -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
         }
         
         // Check interceptions with receptor (and surface, if there is)
