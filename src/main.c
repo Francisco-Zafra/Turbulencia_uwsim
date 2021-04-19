@@ -14,6 +14,7 @@
 #include "simulation.h"
 #include "simulation_file.h"
 
+//TEST
 
 /* --- Signals management --------------------------------------------------- */
 
