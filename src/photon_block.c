@@ -397,6 +397,14 @@ void photon_move(Photon * photon, Simulation * sim)
         
         while (boundary)    //chequeamos cambio de capa
         {
+            //Calculate normal vector with polar and azimuthal angles
+            phi = urand() * (M_PI/2.0f);
+            theta = urand() * (2.0f * M_PI);
+            boundary_normal_x = cosf(phi)*sinf(theta);
+            boundary_normal_y = sinf(phi)*sinf(theta);
+            boundary_normal_z = cosf(theta);
+
+            //Calcualte n quotient
             n_quotient=n_water_variable[photon->layer+1]/n_water_variable[photon->layer];
             boundary_cos_critical_angle= sqrtf(1.0f - powf(n_quotient, 2.0f));
 
@@ -406,14 +414,14 @@ void photon_move(Photon * photon, Simulation * sim)
             }
 
             // Bring back photon to boundary position
-            //distance_to_boundary = (photon->z+(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers))) / photon->uz;
-            distance_to_boundary = distance_to_boundary_fun(boundary_normal_x,
-                                                        boundary_normal_y,
-                                                        boundary_normal_z,
-                                                        0,
-                                                        0,
-                                                        -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)),
-                                                        photon);
+            distance_to_boundary = (photon->z+(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers))) / photon->uz;
+            // distance_to_boundary = distance_to_boundary_fun(boundary_normal_x,
+            //                                             boundary_normal_y,
+            //                                             boundary_normal_z,
+            //                                             0,
+            //                                             0,
+            //                                             -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)),
+            //                                             photon);
             //printf("Distancia: %f\n", distance_to_boundary);
             photon->x -= distance_to_boundary * photon->ux;
             photon->y -= distance_to_boundary * photon->uy;
