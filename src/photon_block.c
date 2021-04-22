@@ -39,6 +39,20 @@ bool is_intercepted(Photon * photon, float nx, float ny,
     return dot_product(photon->x, photon->y, photon->z, nx, ny ,nz) > 0;
 }
 
+// Return distance traveled from photon position to given boundary normal vector and position
+float distance_to_boundary_fun(float nx, float ny, float nz, float bx, float by, float bz, Photon * photon){
+    float plane_indep = nx*(-bx) + ny*(-by) + nz*(-bz);
+
+    float alpha = (-nx * photon->x - ny * photon->y - nz * photon->z - plane_indep) / 
+                  (nx * photon->ux + ny * photon->uy + nz * photon->uz);
+
+    float tmp_x = photon->x + alpha* photon->ux;
+    float tmp_y = photon->y + alpha* photon->uy;
+    float tmp_z = photon->z + alpha* photon->uz;
+    
+    return sqrtf(powf(tmp_x - photon->x,2.0f) + powf(tmp_y - photon->y,2.0f) + powf(tmp_z - photon->z,2.0f));
+}
+
 
 // Reflect photon to the other side of the surface with direction reflected
 void reflect_photon(Photon * photon, Simulation * sim)
@@ -376,7 +390,7 @@ void photon_move(Photon * photon, Simulation * sim)
         photon->y += r * photon->uy;
         photon->z += r * photon->uz;
 
-        // Tengo >2 layers? Mi pos z es mayor que alguna layrer?
+        // Tengo >2 layers? He pasado alguna layer?
         boundary = (photon->layer < sim->med_layers) && 
                     dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
                     -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers));
@@ -391,12 +405,20 @@ void photon_move(Photon * photon, Simulation * sim)
                 break;
             }
 
-            // Bring back photon to boundary position //TODO Calcular la distancia a boundary no vertical
-            distance_to_boundary = (photon->z+(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers))) / photon->uz;
+            // Bring back photon to boundary position
+            //distance_to_boundary = (photon->z+(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers))) / photon->uz;
+            distance_to_boundary = distance_to_boundary_fun(boundary_normal_x,
+                                                        boundary_normal_y,
+                                                        boundary_normal_z,
+                                                        0,
+                                                        0,
+                                                        -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)),
+                                                        photon);
+            //printf("Distancia: %f\n", distance_to_boundary);
             photon->x -= distance_to_boundary * photon->ux;
             photon->y -= distance_to_boundary * photon->uy;
             photon->z -= distance_to_boundary * photon->uz;
-            photon->layer += 1;
+            
 
             //Calculate new photon direction
             long b = 2*n_quotient*dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z);
@@ -419,7 +441,7 @@ void photon_move(Photon * photon, Simulation * sim)
 
             //printf("coordenada del fotón (%f,%f,%f)\n",photon->x, photon->y, photon->z);
             //printf("direccion del fotón (%f,%f,%f)\n",ux_exit, uy_exit, uz_exit);
-            //printf("capa %d\n",photon->layer);
+            //printf("capa %d, pos %f\n",photon->layer, -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
 
             // Apply Fresnel equations
             rp = (n_water_variable[photon->layer+1] * photon->uz -
@@ -434,6 +456,7 @@ void photon_move(Photon * photon, Simulation * sim)
             T = 1.0f - R;
             // Calculate final weight
             photon->weight *= T;
+            photon->layer += 1;
 
             //Update photon trayectory 
             photon->ux = ux_exit;
@@ -449,7 +472,7 @@ void photon_move(Photon * photon, Simulation * sim)
             //printf("capa %d\n",photon->layer);
 
             //Por si me he saltado varias layers
-             boundary = (photon->layer < sim->med_layers) && 
+            boundary = (photon->layer < sim->med_layers) && 
                         dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
                         -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers));
         }
