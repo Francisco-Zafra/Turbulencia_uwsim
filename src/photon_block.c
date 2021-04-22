@@ -377,7 +377,9 @@ void photon_move(Photon * photon, Simulation * sim)
         photon->z += r * photon->uz;
 
         // Tengo >2 layers? Mi pos z es mayor que alguna layrer?
-        boundary=(photon->layer < sim->med_layers)&&(photon->z > -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
+        boundary = (photon->layer < sim->med_layers) && 
+                    dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
+                    -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers));
         
         while (boundary)    //chequeamos cambio de capa
         {
@@ -389,7 +391,7 @@ void photon_move(Photon * photon, Simulation * sim)
                 break;
             }
 
-            // Bring back photon to boundary position
+            // Bring back photon to boundary position //TODO Calcular la distancia a boundary no vertical
             distance_to_boundary = (photon->z+(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers))) / photon->uz;
             photon->x -= distance_to_boundary * photon->ux;
             photon->y -= distance_to_boundary * photon->uy;
@@ -447,7 +449,9 @@ void photon_move(Photon * photon, Simulation * sim)
             //printf("capa %d\n",photon->layer);
 
             //Por si me he saltado varias layers
-            boundary=(photon->layer < sim->med_layers)&&(photon->z > -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
+             boundary = (photon->layer < sim->med_layers) && 
+                        dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
+                        -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers));
         }
         
         // Check interceptions with receptor (and surface, if there is)
