@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 #include <omp.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "photon_block.h"
 #include "status.h"
@@ -16,6 +18,14 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
     long num_photons_remaining;   // Number of photons to be processed
     long num_photons;  // Photons to be processes in every task
     bool local_malloc; // If 'num_photons_processed_' is allocated locally
+
+    //Instantiate water variable for the simulation
+    sim->med_n_water_variables = (float*)malloc((sim->med_layers)*sizeof(float));
+    for(int i = 0; i < sim->med_layers; i++){
+        sim->med_n_water_variables[i] = 1.33f;
+        sim->med_n_water_variables[i] += (urand() * 0.5f) - 0.25f;
+        //sim->med_n_water_variables[i] += get_gaussian(0.25f);
+    }
 
     // Set seeds of random module (one per thread)
     urand_init();
@@ -89,6 +99,7 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
     }
 
     set_processing_time(results);
+    free(sim->med_n_water_variables);
     if(local_malloc)
         free(num_photons_processed);
 }
