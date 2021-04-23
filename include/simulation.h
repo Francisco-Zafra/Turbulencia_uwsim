@@ -92,6 +92,8 @@ typedef struct
     float med_n_water;
     float med_speed_m_ns;
     uint8_t med_layers;
+    float med_boundary_var_z;
+    float* med_n_water_variables;
 
     // Surface
     float sur_sigma;

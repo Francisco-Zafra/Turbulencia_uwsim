@@ -25,6 +25,7 @@ typedef struct
     double * med_attenuation;
     double * med_n_water;
     double * med_layers;
+    double * med_boundary_var_z;
 
     double * sur_depth;
     double * sur_sigma_deg;
@@ -240,6 +241,7 @@ void get_fundamentals_from_settings(Fundamentals * fund, Settings * set)
     fund->med_attenuation = settings_get_dbl(set, "medium", "attenuation");
     fund->med_n_water = settings_get_dbl(set, "medium", "index");
     fund->med_layers = settings_get_dbl(set, "medium", "layers");  // se extrae el número de capas
+    fund->med_boundary_var_z = settings_get_dbl(set, "medium", "varZ"); //varZ de boundary
 
     fund->sur_depth = settings_get_dbl(set, "surface", "depth");
     fund->sur_sigma_deg = settings_get_dbl(set, "surface", "sigma");
@@ -380,6 +382,7 @@ void get_simulation_from_fundamentals(Simulation * sim, Fundamentals * fund,
         sim->receptor_vibrating = true;
 
     sim->med_layers = (uint8_t)*fund->med_layers;  //número de capas
+    sim->med_boundary_var_z = (float)*fund->med_boundary_var_z;
     sim->med_albedo = (float)*fund->med_albedo;
     med_attenuation = (float)*fund->med_attenuation;
     sim->med_minus_inv_c = -1.0f / med_attenuation;

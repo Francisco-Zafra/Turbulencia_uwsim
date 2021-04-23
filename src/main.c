@@ -167,6 +167,7 @@ int main(int argc , char* argv[])
                      SUP_p);
 
     settings_add_dbl(settings, "layers", 'L', DOC_L, ID_L, 0, 1.0);
+    settings_add_dbl(settings, "varZ", 705, DOC_705, ID_705, 0, 1);
 
     settings_add_dbl(settings, "g", 'g', DOC_g, ID_g, 0, 0.924);
     settings_add_dbl(settings, "attenuation", 'c', DOC_c, ID_c, 0, 2.19);
