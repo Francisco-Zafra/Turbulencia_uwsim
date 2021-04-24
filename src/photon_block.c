@@ -367,7 +367,6 @@ void photon_move(Photon * photon, Simulation * sim)
             return;
     }
     //Generate boundarys with some z variation 
-    //TODO: Fix Varz>BoundaryDistance Problem
     boundary_pos = (float*)malloc((sim->med_layers-1)*sizeof(float));
     for(int i = 0; i < sim->med_layers-1; i++){
         boundary_pos[i] = -(sim->rec_z-(i+1)*(sim->rec_z/sim->med_layers));

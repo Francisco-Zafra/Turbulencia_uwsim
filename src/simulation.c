@@ -383,6 +383,8 @@ void get_simulation_from_fundamentals(Simulation * sim, Fundamentals * fund,
 
     sim->med_layers = (uint8_t)*fund->med_layers;  //número de capas
     sim->med_boundary_var_z = (float)*fund->med_boundary_var_z;
+    //Chequeo que varz <= distancia_entre_boundarys/2
+    if(sim->med_boundary_var_z > ((sim->rec_z/sim->med_layers)/2)) sim->med_boundary_var_z = (sim->rec_z/sim->med_layers)/2;
     sim->med_albedo = (float)*fund->med_albedo;
     med_attenuation = (float)*fund->med_attenuation;
     sim->med_minus_inv_c = -1.0f / med_attenuation;
