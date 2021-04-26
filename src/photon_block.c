@@ -304,7 +304,6 @@ void photon_move(Photon * photon, Simulation * sim)
     float boundary_cos_critical_angle;
     float boundary_normal_x = 0, boundary_normal_y = 0, boundary_normal_z = 1; //Probamos con n = (0,0,1)
     float ux_exit, uy_exit, uz_exit;
-    float* boundary_pos;
     float beta;
     float rp,rs,R,T;
 
@@ -366,13 +365,8 @@ void photon_move(Photon * photon, Simulation * sim)
         if(photon->z >= 0.0f)
             return;
     }
-    //Generate boundarys with some z variation 
-    boundary_pos = (float*)malloc((sim->med_layers-1)*sizeof(float));
-    for(int i = 0; i < sim->med_layers-1; i++){
-        boundary_pos[i] = -(sim->rec_z-(i+1)*(sim->rec_z/sim->med_layers));
-        boundary_pos[i] += (urand() * sim->med_boundary_var_z) - (sim->med_boundary_var_z/2.0f);
-        //boundary_pos[i] += get_gaussian(sim->med_boundary_var_z);
-    }
+
+
 
     while(true)
     {
@@ -386,17 +380,17 @@ void photon_move(Photon * photon, Simulation * sim)
         // Tengo >2 layers? He pasado la proxima layer?
         boundary = (photon->layer < sim->med_layers) && 
                     dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
-                    boundary_pos[photon->layer - 1];
+                    sim->med_boundary_pos[photon->layer - 1];
         
         while (boundary)    //chequeamos cambio de capa
         {
             //Calculate normal vector with polar and azimuthal angles
-            phi = urand() * (M_PI/2.0f);
+            theta = urand() * (sim->med_boundary_max_theta*M_PI/2.0f);
             //phi = get_gaussian(M_PI/2.0f);
-            theta = urand() * (2.0f * M_PI);
-            boundary_normal_x = cosf(theta)*sinf(phi);
-            boundary_normal_y = sinf(theta)*sinf(phi);
-            boundary_normal_z = cosf(phi);
+            phi = urand() * (2.0f * M_PI);
+            boundary_normal_x = cosf(phi)*sinf(theta);
+            boundary_normal_y = sinf(phi)*sinf(theta);
+            boundary_normal_z = cosf(theta);
 
             //Calcualte n quotient
             n_quotient=sim->med_n_water_variables[photon->layer]/sim->med_n_water_variables[photon->layer-1];
@@ -408,7 +402,7 @@ void photon_move(Photon * photon, Simulation * sim)
             }
 
             // Bring back photon to boundary position
-            distance_to_boundary = (photon->z-boundary_pos[photon->layer - 1]) / photon->uz;
+            distance_to_boundary = (photon->z-sim->med_boundary_pos[photon->layer - 1]) / photon->uz;
             //printf("Distancia: %f\n", distance_to_boundary);
             photon->x -= distance_to_boundary * photon->ux;
             photon->y -= distance_to_boundary * photon->uy;
@@ -416,8 +410,8 @@ void photon_move(Photon * photon, Simulation * sim)
             
 
             //Calculate new photon direction
-            long b = 2*n_quotient*dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z);
-            long c = 1 - powf(n_quotient, 2.0f);
+            float b = 2*n_quotient*dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z);
+            float c = 1 - powf(n_quotient, 2.0f);
 
             beta = (-b + sqrtf(powf(b,2) - 4*c)) / 2;        
             ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
@@ -469,7 +463,7 @@ void photon_move(Photon * photon, Simulation * sim)
             //Por si me he saltado varias layers
             boundary = (photon->layer < sim->med_layers) && 
                         dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
-                        boundary_pos[photon->layer - 1];
+                        sim->med_boundary_pos[photon->layer - 1];
         }
         
         // Check interceptions with receptor (and surface, if there is)
@@ -562,7 +556,6 @@ void photon_move(Photon * photon, Simulation * sim)
         float phi = 2 * M_PI * urand();
         update_photon_direction(photon, cos_theta, phi);
     }
-    free(boundary_pos);
 }
 
 
@@ -652,6 +645,7 @@ void photon_block_process(PhotonBlock * photon_block, Simulation * sim)
 
     for(k = 0; k < photon_block->length; ++k)
     {
+
         photon_emit(&photon_block->photons[k], sim);
         photon_move(&photon_block->photons[k], sim);
         photon_receive(&photon_block->photons[k], sim);

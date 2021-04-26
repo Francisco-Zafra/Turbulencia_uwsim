@@ -26,6 +26,8 @@ typedef struct
     double * med_n_water;
     double * med_layers;
     double * med_boundary_var_z;
+    double * med_var_n_water;
+    double * med_boundary_max_theta;
 
     double * sur_depth;
     double * sur_sigma_deg;
@@ -242,6 +244,8 @@ void get_fundamentals_from_settings(Fundamentals * fund, Settings * set)
     fund->med_n_water = settings_get_dbl(set, "medium", "index");
     fund->med_layers = settings_get_dbl(set, "medium", "layers");  // se extrae el número de capas
     fund->med_boundary_var_z = settings_get_dbl(set, "medium", "varZ"); //varZ de boundary
+    fund->med_var_n_water = settings_get_dbl(set, "medium", "var_n_water");  // se extrae el Var n_water
+    fund->med_boundary_max_theta = settings_get_dbl(set, "medium", "boundary_max_theta"); //max theta
 
     fund->sur_depth = settings_get_dbl(set, "surface", "depth");
     fund->sur_sigma_deg = settings_get_dbl(set, "surface", "sigma");
@@ -384,7 +388,9 @@ void get_simulation_from_fundamentals(Simulation * sim, Fundamentals * fund,
     sim->med_layers = (uint8_t)*fund->med_layers;  //número de capas
     sim->med_boundary_var_z = (float)*fund->med_boundary_var_z;
     //Chequeo que varz <= distancia_entre_boundarys/2
-    if(sim->med_boundary_var_z > ((sim->rec_z/sim->med_layers)/2)) sim->med_boundary_var_z = (sim->rec_z/sim->med_layers)/2;
+    if(sim->med_boundary_var_z > ((sim->rec_z/sim->med_layers)/2)) sim->med_boundary_var_z = 0.99f*(sim->rec_z/sim->med_layers)/2;
+    sim->med_var_n_water = (float)*fund->med_var_n_water;
+    sim->med_boundary_max_theta = (float)*fund->med_boundary_max_theta;
     sim->med_albedo = (float)*fund->med_albedo;
     med_attenuation = (float)*fund->med_attenuation;
     sim->med_minus_inv_c = -1.0f / med_attenuation;
@@ -538,4 +544,19 @@ bool simulation_is_compatible(Simulation * sim, Simulation * father_sim)
         return false;
 
     return true;
+}
+
+void init_water_n_and_boundarys(Simulation* sim){
+    //Generate water variable
+    for(int i = 0; i < sim->med_layers; i++){
+        sim->med_n_water_variables[i] = sim->med_n_water;
+        sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
+        //sim->med_n_water_variables[i] += get_gaussian(0.25f);
+    }
+    //Generate boundarys with some z variation 
+    for(int i = 0; i < sim->med_layers-1; i++){
+        sim->med_boundary_pos[i] = -(sim->rec_z-(i+1)*(sim->rec_z/sim->med_layers));
+        sim->med_boundary_pos[i] += (((urand()*2.0f)-1.0f) * sim->med_boundary_var_z);
+        //boundary_pos[i] += get_gaussian(sim->med_boundary_var_z);
+    }
 }

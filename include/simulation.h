@@ -94,6 +94,9 @@ typedef struct
     uint8_t med_layers;
     float med_boundary_var_z;
     float* med_n_water_variables;
+    float* med_boundary_pos;
+    float med_var_n_water;
+    float med_boundary_max_theta;
 
     // Surface
     float sur_sigma;
@@ -130,5 +133,6 @@ void simulation_destroy_array(Simulation * sim);
 bool simulation_is_compatible(Simulation * sim, Simulation * father_sim);
 float get_gaussian(float standard_deviation);
 float inv_cdf_spf(float q, Simulation * sim); // TODO: mover a otro lado
+void init_water_n_and_boundarys(Simulation* sim);
 
 #endif

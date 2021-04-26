@@ -19,17 +19,13 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
     long num_photons;  // Photons to be processes in every task
     bool local_malloc; // If 'num_photons_processed_' is allocated locally
 
-    //Instantiate water variable for the simulation
-    sim->med_n_water_variables = (float*)malloc((sim->med_layers)*sizeof(float));
-    for(int i = 0; i < sim->med_layers; i++){
-        sim->med_n_water_variables[i] = 1.33f;
-        sim->med_n_water_variables[i] += (urand() * 0.5f) - 0.25f;
-        //sim->med_n_water_variables[i] += get_gaussian(0.25f);
-    }
-
     // Set seeds of random module (one per thread)
     urand_init();
     local_malloc = false;
+
+    //Init simulation n and boundary_pos array
+    sim->med_boundary_pos = (float*)malloc((sim->med_layers-1)*sizeof(float));
+    sim->med_n_water_variables = (float*)malloc((sim->med_layers)*sizeof(float));
 
     // If num_photons_processed_ == NULL, then there are no photons processed
     if(num_photons_processed_ != NULL)
@@ -69,7 +65,7 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
                     {
                         // Create the block
                         block = photon_block_new(num_photons);
-
+                        init_water_n_and_boundarys(sim);
                         // Process block (emission, tranmission and reception)
                         photon_block_process(block, sim);
                         // Obtain results (statistics, etc) from processed block
@@ -100,6 +96,7 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
 
     set_processing_time(results);
     free(sim->med_n_water_variables);
+    free(sim->med_boundary_pos);
     if(local_malloc)
         free(num_photons_processed);
 }

@@ -68,6 +68,8 @@
 #define DOC_q   "Hide configuration and results output"
 #define DOC_L   "Set number of layers to <value>" //número de capas
 #define DOC_705 "Set boundary z variation to <value> (meters)"
+#define DOC_706 "Set n water variation to <value> (meters)"
+#define DOC_707 "Set max boundary theta angle to <value>"
 
 // Option IDs
 #define ID_P    0x01
@@ -103,6 +105,8 @@
 #define ID_l    0x1F
 #define ID_L    0x20    //identificador numero de capas
 #define ID_705  0x21    //identificador boundary varZ
+#define ID_706  0x22    //identificador var_n_water
+#define ID_707  0x23    //identificador max_boundary_theta
 
 
 #endif

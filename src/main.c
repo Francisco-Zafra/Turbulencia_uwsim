@@ -169,6 +169,9 @@ int main(int argc , char* argv[])
     settings_add_dbl(settings, "layers", 'L', DOC_L, ID_L, 0, 1.0);
     settings_add_dbl(settings, "varZ", 705, DOC_705, ID_705, 0, 1);
 
+    settings_add_dbl(settings, "var_n_water", 706, DOC_706, ID_706, 0, 0.05);
+    settings_add_dbl(settings, "boundary_max_theta", 707, DOC_707, ID_707, 0, 0.5);
+
     settings_add_dbl(settings, "g", 'g', DOC_g, ID_g, 0, 0.924);
     settings_add_dbl(settings, "attenuation", 'c', DOC_c, ID_c, 0, 2.19);
     settings_add_dbl(settings, "albedo", 'w', DOC_w, ID_w, 0, 0.83);
