@@ -114,6 +114,11 @@ typedef struct
     HGParameters spf_minus_h;
 
     bool rotation_required;
+
+    //Floor
+    float floor_depth;
+    bool there_is_floor;
+    float floor_n;
 }
 Simulation;
 

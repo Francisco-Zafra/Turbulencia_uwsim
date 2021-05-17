@@ -183,6 +183,11 @@ int main(int argc , char* argv[])
     settings_add_dbl(settings, "sigma", 'W', DOC_W, ID_W, 0, 0.0);
     settings_add_dbl(settings, "index", 702, DOC_702, ID_702,
                      FILENAME_HIDDEN, 1.0);
+    
+    settings_select_family(settings, "floor");
+    settings_add_dbl(settings, "depth", 708, DOC_708, ID_708, 0, INFINITY);
+    settings_add_dbl(settings, "index", 709, DOC_709, ID_709,
+                     FILENAME_HIDDEN, 1.5);
 
     settings_select_family(settings, "source");
     settings_add_str(settings, "type", 'T', DOC_T, ID_T, 0, "ideal", SUP_s);

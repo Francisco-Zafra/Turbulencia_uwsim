@@ -109,6 +109,43 @@ void reflect_photon(Photon * photon, Simulation * sim)
     photon->y += distance_to_surface * photon->uy;
 }
 
+void reflect_photon_floor(Photon * photon, Simulation * sim)
+{
+    RotationMatrix surface_mat; // Rotation matrix for vibration modeling
+    Vector rvector;             // Rotation vector for 'surface_mat'
+    float rp, rs;
+    float R;
+    float cos_exit;
+    float distance_to_floor;
+    photon->reflected = true;
+    // Calculate distance traveled since surface reflection
+    distance_to_floor = (photon->y - sim->floor_depth) /
+                            photon->uy;
+    // I go to floor
+    photon->y = sim->floor_depth;
+
+    // If incident angle is lower than critical angle, apply Fresnel equations
+    if(photon->uy > sim->sur_cos_critical_angle)
+    {
+        cos_exit = sqrtf( 1.0f - sim->sur_n_quotient * sim->sur_n_quotient *
+                         (1.0f - photon->uy * photon->uy));
+        rp = (sim->floor_n * photon->uy - sim->med_n_water * cos_exit) /
+             (sim->floor_n * photon->uy + sim->med_n_water * cos_exit);
+        rs = (sim->med_n_water * photon->uy - sim->floor_n * cos_exit) /
+             (sim->med_n_water * photon->uy + sim->floor_n * cos_exit);
+        R = (rp * rp + rs  *rs) / 2.0f;
+        photon->weight *= R;
+    }
+
+    // Incident angle is equal to reflexed angle
+    photon->uy = -photon->uy;
+
+    // Photon must travel the remain distance to fulfill Beer-Lambert law
+    photon->x += distance_to_floor * photon->ux;        
+    photon->y += distance_to_floor * photon->uy;
+    photon->z += distance_to_floor * photon->uz;
+}
+
 
 // Update photon direction with polar angle cosine 'cos_theta' and azimuthal
 // angle 'phi'
@@ -295,6 +332,7 @@ void photon_move(Photon * photon, Simulation * sim)
     float distance_to_surface;
     float distance_to_rec;
     float distance_to_boundary;
+    float distance_to_floor;
     float theta, phi;
     bool intercepted;
     bool out;
@@ -513,7 +551,53 @@ void photon_move(Photon * photon, Simulation * sim)
                     translate_photon_to_system(photon, &sim->rec_mat);
             }
         }
-        else
+        if(sim->there_is_floor)
+        {
+            intercepted = is_intercepted(photon, nx, ny, nz);
+            out = photon->y <= sim->floor_depth;
+
+            if(intercepted && out)
+            {
+                // A photon clone is brought back to the reflection position
+                new_photon = *photon;
+                distance_to_floor = (new_photon.y - sim->floor_depth) /
+                                      new_photon.uy;
+                new_photon.x -= distance_to_floor * new_photon.ux;
+                new_photon.y = sim->floor_depth;
+                new_photon.z -= distance_to_floor * new_photon.uz;
+
+                // If in this position, photon clone is intercepted, then
+                // interception takes place before reflection
+                intercepted = is_intercepted(&new_photon, nx, ny, nz);
+                out = !intercepted;
+            }
+
+            if(out)
+            {
+                // Reflection
+                if(photon->reflected)
+                    // A double reflexion is avoided
+                    break;
+                reflect_photon_floor(photon, sim);
+                if(photon->y <= sim->floor_depth)
+                    // Photon out
+                    break;
+
+                // Before reflection, photon can be intercepted by receptor
+                intercepted = is_intercepted(photon, nx, ny, nz);
+            }
+
+            if(intercepted)
+            {
+                // In this case, coordinates are related to the universal frame
+                photon->intercepted = true;
+                if(sim->receptor_vibrating)
+                        translate_photon_to_system(photon, &mat);
+                if(sim->receptor_deflected)
+                    translate_photon_to_system(photon, &sim->rec_mat);
+            }
+        }
+        if(!sim->there_is_floor && !sim->there_is_surface)
         {
             // In this case, coordinates are related to the receptor frame
             photon->intercepted = photon->z >= 0.0f;

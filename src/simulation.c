@@ -55,6 +55,9 @@ typedef struct
 
     SPFType spf_type;
     double * spf_g;
+
+    double * floor_n;
+    double * floor_depth;
 }
 Fundamentals;
 
@@ -250,6 +253,9 @@ void get_fundamentals_from_settings(Fundamentals * fund, Settings * set)
     fund->sur_depth = settings_get_dbl(set, "surface", "depth");
     fund->sur_sigma_deg = settings_get_dbl(set, "surface", "sigma");
     fund->sur_n_air = settings_get_dbl(set, "surface", "index");
+
+    fund->floor_n = settings_get_dbl(set, "floor", "index");
+    fund->floor_depth = settings_get_dbl(set, "floor", "depth");
 
     fund->sou_type = (SourceType)settings_get_index(set, "source", "type");
     fund->sou_full_angle_deg = settings_get_dbl(set, "source", "full angle");
@@ -452,6 +458,13 @@ void get_simulation_from_fundamentals(Simulation * sim, Fundamentals * fund,
 
     sim->rotation_required = sim->receptor_deflected  ||
                              sim->receptor_vibrating;
+
+    sim->floor_n = (float)*fund->floor_n;
+    sim->floor_depth = (float)*fund->floor_depth;
+    if(sim->floor_depth != INFINITY)
+    {
+        sim->there_is_floor = true;
+    }
 }
 
 
