@@ -1,5 +1,9 @@
 # Turbulencia_uwsim
 
+Se ha añadido un suelo:
+  - Profundidad del suelo: --floor-depth
+  - Indice n: --floor-index (por defecto 1.5)
+
 Particulares de la turbulencia:
   - Parametros de entrada actuales: 
     - Variacion en z de las transiciones: --varZ
