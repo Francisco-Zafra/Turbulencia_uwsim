@@ -471,18 +471,18 @@ void photon_move(Photon * photon, Simulation * sim)
             //printf("capa %d, pos %f\n",photon->layer, -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
 
             // Apply Fresnel equations
-            rp = (sim->med_n_water_variables[photon->layer] * photon->uz -
-                        sim->med_n_water_variables[photon->layer-1] * uz_exit) /
-                        (sim->med_n_water_variables[photon->layer] * photon->uz +
-                        sim->med_n_water_variables[photon->layer-1] * uz_exit);
-            rs = (sim->med_n_water_variables[photon->layer-1] * photon->uz -
-                        sim->med_n_water_variables[photon->layer] * uz_exit) /
-                        (sim->med_n_water_variables[photon->layer-1] * photon->uz +
-                        sim->med_n_water_variables[photon->layer] * uz_exit);
-            R = (rp * rp + rs  *rs) / 2.0f;
-            T = 1.0f - R;
+            // rp = (sim->med_n_water_variables[photon->layer] * photon->uz -
+            //             sim->med_n_water_variables[photon->layer-1] * uz_exit) /
+            //             (sim->med_n_water_variables[photon->layer] * photon->uz +
+            //             sim->med_n_water_variables[photon->layer-1] * uz_exit);
+            // rs = (sim->med_n_water_variables[photon->layer-1] * photon->uz -
+            //             sim->med_n_water_variables[photon->layer] * uz_exit) /
+            //             (sim->med_n_water_variables[photon->layer-1] * photon->uz +
+            //             sim->med_n_water_variables[photon->layer] * uz_exit);
+            // R = (rp * rp + rs  *rs) / 2.0f;
+            // T = 1.0f - R;
             // Calculate final weight
-            photon->weight *= T;
+            //photon->weight *= T; Comentando para ver Gassenlui
             photon->layer += 1;
 
             //Update photon trayectory 
