@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "photon_block.h"
+#include "simulation.h"
 #include "status.h"
 #include "urand.h"
 
@@ -26,7 +27,10 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
     //Init simulation n and boundary_pos array
     sim->med_boundary_pos = (float*)malloc((sim->med_layers-1)*sizeof(float));
     sim->med_n_water_variables = (float*)malloc((sim->med_layers)*sizeof(float));
-
+    if(strcmp(sim->phase_json,"") != 0)
+        initParametrosPantallaFaseFromJson(sim->phase_json, sim);
+    else
+        sim->phase_layers = 0;
     // If num_photons_processed_ == NULL, then there are no photons processed
     if(num_photons_processed_ != NULL)
         num_photons_processed = num_photons_processed_;
@@ -97,6 +101,20 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
     set_processing_time(results);
     free(sim->med_n_water_variables);
     free(sim->med_boundary_pos);
+    free(sim->phase_layer_pos);
+    for(int i = 0; i < sim->phase_layers; i++){
+        for(int j = 0; j < sim->phase_max_x; j++){
+            free(sim->phase_derivadasX[i][j]);
+            free(sim->phase_derivadasY[i][j]);
+        }
+    }
+    for(int i = 0; i < sim->phase_layers; i++){
+        free(sim->phase_derivadasX[i]);
+        free(sim->phase_derivadasY[i]);
+    }
+    free(sim->phase_derivadasX);
+    free(sim->phase_derivadasY);
+
     if(local_malloc)
         free(num_photons_processed);
 }

@@ -24,6 +24,7 @@ typedef struct
     bool intercepted;
     bool received;
     uint8_t layer;       // añado layer para que se guarde en qué capa está del medio. Cada capa tendrá un índice de refracción
+    uint8_t phase_layer;
 }
 Photon;
 

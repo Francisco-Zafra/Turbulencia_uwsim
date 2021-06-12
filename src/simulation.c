@@ -3,6 +3,9 @@
 #include <math.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
 
 #include "configuration.h"
 #include "urand.h"
@@ -28,6 +31,7 @@ typedef struct
     double * med_boundary_var_z;
     double * med_var_n_water;
     double * med_boundary_max_theta;
+    char * phase_json;
 
     double * sur_depth;
     double * sur_sigma_deg;
@@ -246,6 +250,7 @@ void get_fundamentals_from_settings(Fundamentals * fund, Settings * set)
     fund->med_attenuation = settings_get_dbl(set, "medium", "attenuation");
     fund->med_n_water = settings_get_dbl(set, "medium", "index");
     fund->med_layers = settings_get_dbl(set, "medium", "layers");  // se extrae el número de capas
+    fund->phase_json = (char*)settings_get_str(set, "medium", "phase_json");
     fund->med_boundary_var_z = settings_get_dbl(set, "medium", "varZ"); //varZ de boundary
     fund->med_var_n_water = settings_get_dbl(set, "medium", "var_n_water");  // se extrae el Var n_water
     fund->med_boundary_max_theta = settings_get_dbl(set, "medium", "boundary_max_theta"); //max theta
@@ -279,6 +284,7 @@ void get_fundamentals_from_settings(Fundamentals * fund, Settings * set)
 
     fund->spf_type = (SPFType)settings_get_index(set, "medium",
                                                  "phase function");
+
     fund->spf_g = settings_get_dbl(set, "medium", "g");
 }
 
@@ -392,6 +398,7 @@ void get_simulation_from_fundamentals(Simulation * sim, Fundamentals * fund,
         sim->receptor_vibrating = true;
 
     sim->med_layers = (uint8_t)*fund->med_layers;  //número de capas
+    sim->phase_json = fund->phase_json;
     sim->med_boundary_var_z = (float)*fund->med_boundary_var_z;
     //Chequeo que varz <= distancia_entre_boundarys/2
     if(sim->med_boundary_var_z > ((sim->rec_z/sim->med_layers)/2)) sim->med_boundary_var_z = 0.99f*(sim->rec_z/sim->med_layers)/2;
@@ -561,15 +568,114 @@ bool simulation_is_compatible(Simulation * sim, Simulation * father_sim)
 
 void init_water_n_and_boundarys(Simulation* sim){
     //Generate water variable
+    //printf("------------------------------\n");
     for(int i = 0; i < sim->med_layers; i++){
         sim->med_n_water_variables[i] = sim->med_n_water;
         sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
         //sim->med_n_water_variables[i] += get_gaussian(0.25f);
+
+        // sim->med_n_water_variables[i] = urand()*(1.3420-1.3412) + 1.3412;
+        // sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
+
+        //printf("%f\n",sim->med_n_water_variables[i]);
     }
+    //printf("------------------------------\n");
     //Generate boundarys with some z variation 
     for(int i = 0; i < sim->med_layers-1; i++){
         sim->med_boundary_pos[i] = -(sim->rec_z-(i+1)*(sim->rec_z/sim->med_layers));
         sim->med_boundary_pos[i] += (((urand()*2.0f)-1.0f) * sim->med_boundary_var_z);
         //boundary_pos[i] += get_gaussian(sim->med_boundary_var_z);
     }
+}
+
+void initParametrosPantallaFaseFromJson(char* json, Simulation* sim){
+    //Abrir json
+    GError *error;
+    JsonParser* parser;
+    JsonNode *root;
+
+    int dim1;
+    int dim2;
+    int dim3;
+
+    parser = json_parser_new ();
+
+    error = NULL;
+    json_parser_load_from_file (parser, json, &error);
+    if (error)
+    {
+        g_print ("Unable to parse `%s': %s\n", json, error->message);
+        g_error_free (error);
+        g_object_unref (parser);
+    }
+
+    //Crear el root
+    root = json_parser_get_root (parser);
+    /* manipulate the object tree and then exit */
+    JsonObject* listaMatrices = json_node_get_object(root);
+
+    //Get Array DerivadasX
+    JsonArray* array = json_object_get_array_member(listaMatrices, "Dphz_dx_k_z");
+
+    dim1 = (int)json_array_get_length (array);
+    sim->phase_layers = dim1;
+    sim->phase_layer_pos = (float*)malloc((sim->phase_layers-1)*sizeof(float));
+    for(int i = 0; i < dim1; i++){
+        sim->phase_layer_pos[i] = -(sim->rec_z-(i+1)*(sim->rec_z/sim->phase_layers));
+    }
+    // Allocate memory blocks
+    // of size x*y*z
+    sim->phase_derivadasX = (double***)malloc(dim1 * sizeof(double**));
+ 
+    // Traverse the 3D array
+    for (int i = 0; i < dim1; i++) {
+
+        JsonNode* matrizNode = json_array_get_element (array, i);
+        JsonObject* matriz = json_node_get_object(matrizNode);
+        JsonArray* valores = json_object_get_array_member(matriz, "values");
+        dim2 = (int)json_array_get_length (valores);
+        sim->phase_max_x = dim2;      
+        sim->phase_derivadasX[i] = (double **) malloc(dim2*sizeof(double *));
+        for (int j = 0; j < dim2; j++) {
+
+            JsonArray* valoresX = json_array_get_array_element (valores, j);
+            dim3 = (int)json_array_get_length (valoresX);
+            sim->phase_max_y = dim3; 
+            sim->phase_derivadasX[i][j] = (double *)malloc(dim3*sizeof(double));
+            for (int k = 0; k < dim3; k++) {
+
+                sim->phase_derivadasX[i][j][k] = json_array_get_double_element (valoresX, k);
+            }
+        }
+    } 
+
+    //Get Array DerivadasY
+    array = json_object_get_array_member(listaMatrices, "Dphz_dy_k_z");
+
+    dim1 = (int)json_array_get_length (array);
+    // Allocate memory blocks
+    // of size x*y*z
+    sim->phase_derivadasY = (double***)malloc(dim1 * sizeof(double**));
+ 
+    // Traverse the 3D array
+    for (int i = 0; i < dim1; i++) {
+
+        JsonNode* matrizNode = json_array_get_element (array, i);
+        JsonObject* matriz = json_node_get_object(matrizNode);
+        JsonArray* valores = json_object_get_array_member(matriz, "values");
+        dim2 = (int)json_array_get_length (valores);       
+        sim->phase_derivadasY[i] = (double **) malloc(dim2*sizeof(double *));
+        for (int j = 0; j < dim2; j++) {
+
+            JsonArray* valoresX = json_array_get_array_element (valores, j);
+            dim3 = (int)json_array_get_length (valoresX);
+            sim->phase_derivadasY[i][j] = (double *)malloc(dim3*sizeof(double));
+            for (int k = 0; k < dim3; k++) {
+
+                sim->phase_derivadasY[i][j][k] = json_array_get_double_element (valoresX, k);
+            }
+        }
+    }      
+    //Cerrar parser
+    g_object_unref (parser);
 }

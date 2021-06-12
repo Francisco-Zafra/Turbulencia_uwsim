@@ -1,5 +1,9 @@
 # Turbulencia_uwsim
 
+Pantallas de fase:
+  - Resolucion en cm (no es parametro, se cambia en el codigo)
+  - Parametro --phase_json para introducir el archivo
+
 Se ha añadido un suelo:
   - Profundidad del suelo: --floor-depth
   - Indice n: --floor-index (por defecto 1.5)

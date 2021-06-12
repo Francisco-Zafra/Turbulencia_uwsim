@@ -316,6 +316,7 @@ void photon_emit(Photon * photon, Simulation * sim)
     photon->intercepted = false;
     photon->received = false;
     photon->layer = 1u;    // se inicializa estando en la capa 1 por si se considera modelar el medio con múltiples capas y diferentes índices de refracción
+    photon->phase_layer = 1u;
 }
 
 
@@ -333,10 +334,11 @@ void photon_move(Photon * photon, Simulation * sim)
     float distance_to_rec;
     float distance_to_boundary;
     float distance_to_floor;
+    float distance_to_phase_layer;
     float theta, phi;
     bool intercepted;
     bool out;
-    bool boundary;
+    bool boundary, phase_layer;
     //float n_water_variable[10] = {0, 1.33f, 1.23f, 1.3f, 1.29f, 1.32f, 1.15f, 1.33f, 1.28f, 1.3f};
     float n_quotient;
     float boundary_cos_critical_angle;
@@ -463,7 +465,7 @@ void photon_move(Photon * photon, Simulation * sim)
                 beta = (-b - sqrtf(powf(b,2) - 4*c)) / 2;
                 ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
                 uy_exit = n_quotient * photon->uy + beta * boundary_normal_y;
-                uz_exit = n_quotient * photon->uz + beta * boundary_normal_z;         
+                uz_exit = n_quotient * photon->uz + beta * boundary_normal_z;        
             }
 
             //printf("coordenada del fotón (%f,%f,%f)\n",photon->x, photon->y, photon->z);
@@ -471,18 +473,18 @@ void photon_move(Photon * photon, Simulation * sim)
             //printf("capa %d, pos %f\n",photon->layer, -(sim->rec_z-photon->layer*(sim->rec_z/sim->med_layers)));
 
             // Apply Fresnel equations
-            // rp = (sim->med_n_water_variables[photon->layer] * photon->uz -
-            //             sim->med_n_water_variables[photon->layer-1] * uz_exit) /
-            //             (sim->med_n_water_variables[photon->layer] * photon->uz +
-            //             sim->med_n_water_variables[photon->layer-1] * uz_exit);
-            // rs = (sim->med_n_water_variables[photon->layer-1] * photon->uz -
-            //             sim->med_n_water_variables[photon->layer] * uz_exit) /
-            //             (sim->med_n_water_variables[photon->layer-1] * photon->uz +
-            //             sim->med_n_water_variables[photon->layer] * uz_exit);
-            // R = (rp * rp + rs  *rs) / 2.0f;
-            // T = 1.0f - R;
+            rp = (sim->med_n_water_variables[photon->layer] * photon->uz -
+                        sim->med_n_water_variables[photon->layer-1] * uz_exit) /
+                        (sim->med_n_water_variables[photon->layer] * photon->uz +
+                        sim->med_n_water_variables[photon->layer-1] * uz_exit);
+            rs = (sim->med_n_water_variables[photon->layer-1] * photon->uz -
+                        sim->med_n_water_variables[photon->layer] * uz_exit) /
+                        (sim->med_n_water_variables[photon->layer-1] * photon->uz +
+                        sim->med_n_water_variables[photon->layer] * uz_exit);
+            R = (rp * rp + rs  *rs) / 2.0f;
+            T = 1.0f - R;
             // Calculate final weight
-            //photon->weight *= T; Comentando para ver Gassenlui
+            photon->weight *= T;
             photon->layer += 1;
 
             //Update photon trayectory 
@@ -503,7 +505,50 @@ void photon_move(Photon * photon, Simulation * sim)
                         dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
                         sim->med_boundary_pos[photon->layer - 1];
         }
-        
+        phase_layer = (photon->phase_layer < sim->phase_layers) && photon->z > sim->phase_layer_pos[photon->phase_layer - 1];
+        while (phase_layer){
+            //printf("%d < %d @ %f > %f\n",photon->phase_layer,sim->phase_layers,photon->z,sim->phase_layer_pos[photon->phase_layer - 1]);
+            //printf("PHASE LAYEEEEEEEEEEEEEEEEEER %d\n", photon->phase_layer);
+
+            // Bring back photon to boundary position
+            distance_to_phase_layer = (photon->z-sim->phase_layer_pos[photon->phase_layer - 1]) / photon->uz;
+            //printf("Distancia: %f\n", distance_to_boundary);
+            photon->x -= distance_to_phase_layer * photon->ux;
+            photon->y -= distance_to_phase_layer * photon->uy;
+            photon->z -= distance_to_phase_layer * photon->uz;
+            
+            //Calculate new photon direction
+            //La matriz va de 0 a max, sumamos max/2 para que la pantalla este centrada en z
+            sim->phase_resolution = 1e2f;
+            int valX = (int)(photon->x * sim->phase_resolution) + sim->phase_max_x/2;
+            int valY = (int)(photon->y * sim->phase_resolution) + sim->phase_max_y/2;
+            //printf("px: %f; py: %f\n", photon->x, photon->y);
+            //printf("x: %d; y: %d\n", valX, valY);
+            if(valX >= sim->phase_max_x || valY >= sim->phase_max_y || valX < 0 || valY < 0){
+                //printf("OUT %d\n", photon->phase_layer);
+                return;
+            }
+            ux_exit = photon->ux + sim->phase_derivadasX[photon->phase_layer - 1][valX][valY];
+            uy_exit = photon->uy + sim->phase_derivadasY[photon->phase_layer - 1][valX][valY];
+            uz_exit = sqrt(1 - pow(ux_exit,2) - pow(uy_exit,2));
+            photon->phase_layer += 1;
+
+            //Update photon trayectory 
+            photon->ux = ux_exit;
+            photon->uy = uy_exit;
+            photon->uz = uz_exit;
+
+            // Photon must travel the remain distance to fulfill Beer-Lambert law
+            photon->x += distance_to_phase_layer * photon->ux;
+            photon->y += distance_to_phase_layer * photon->uy;
+            photon->z += distance_to_phase_layer * photon->uz;
+
+            //printf("coordenada z del fotón %5.2f\n",photon->z);
+            //printf("capa %d\n",photon->layer);
+
+            //Por si me he saltado varias layers
+            phase_layer = (photon->phase_layer < sim->phase_layers) && photon->z > sim->phase_layer_pos[photon->phase_layer - 1];
+        }
         // Check interceptions with receptor (and surface, if there is)
         if(sim->there_is_surface)
         {
