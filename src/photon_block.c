@@ -519,7 +519,7 @@ void photon_move(Photon * photon, Simulation * sim)
             
             //Calculate new photon direction
             //La matriz va de 0 a max, sumamos max/2 para que la pantalla este centrada en z
-            sim->phase_resolution = 1e2f;
+            sim->phase_resolution = 1e3f;
             int valX = (int)(photon->x * sim->phase_resolution) + sim->phase_max_x/2;
             int valY = (int)(photon->y * sim->phase_resolution) + sim->phase_max_y/2;
             //printf("px: %f; py: %f\n", photon->x, photon->y);

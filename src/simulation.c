@@ -617,11 +617,11 @@ void initParametrosPantallaFaseFromJson(char* json, Simulation* sim){
     //Get Array DerivadasX
     JsonArray* array = json_object_get_array_member(listaMatrices, "Dphz_dx_k_z");
 
-    dim1 = (int)json_array_get_length (array);
+    dim1 = (int)(sim->rec_z/2.5);
     sim->phase_layers = dim1;
-    sim->phase_layer_pos = (float*)malloc((sim->phase_layers-1)*sizeof(float));
+    sim->phase_layer_pos = (float*)malloc((sim->phase_layers)*sizeof(float));
     for(int i = 0; i < dim1; i++){
-        sim->phase_layer_pos[i] = -(sim->rec_z-(i+1)*(sim->rec_z/sim->phase_layers));
+        sim->phase_layer_pos[i] = -(sim->rec_z-(i+1)*2.5f);
     }
     // Allocate memory blocks
     // of size x*y*z
@@ -652,7 +652,6 @@ void initParametrosPantallaFaseFromJson(char* json, Simulation* sim){
     //Get Array DerivadasY
     array = json_object_get_array_member(listaMatrices, "Dphz_dy_k_z");
 
-    dim1 = (int)json_array_get_length (array);
     // Allocate memory blocks
     // of size x*y*z
     sim->phase_derivadasY = (double***)malloc(dim1 * sizeof(double**));
