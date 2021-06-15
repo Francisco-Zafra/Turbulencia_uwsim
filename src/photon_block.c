@@ -438,7 +438,7 @@ void photon_move(Photon * photon, Simulation * sim)
 
             if((sim->med_n_water_variables[photon->layer-1]>sim->med_n_water_variables[photon->layer])&&(photon->uz < boundary_cos_critical_angle)){
                 // si reflexión total en la transición de medios entonces se descarta el fotón
-                break;
+                return;
             }
 
             // Bring back photon to boundary position
@@ -505,6 +505,7 @@ void photon_move(Photon * photon, Simulation * sim)
                         dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
                         sim->med_boundary_pos[photon->layer - 1];
         }
+        //Checkeamos si nos hemos cruzado pantallas de fase
         phase_layer = (photon->phase_layer < sim->phase_layers) && photon->z > sim->phase_layer_pos[photon->phase_layer - 1];
         while (phase_layer){
             //printf("%d < %d @ %f > %f\n",photon->phase_layer,sim->phase_layers,photon->z,sim->phase_layer_pos[photon->phase_layer - 1]);

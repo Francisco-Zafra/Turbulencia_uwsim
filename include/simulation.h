@@ -128,7 +128,8 @@ typedef struct
     float phase_resolution; //Multiplico 1e3 por metros para pasarlo a mm
     uint8_t phase_layers;
     float* phase_layer_pos;
-    char* phase_json;
+    char* phase_json_x;
+    char* phase_json_y;
 }
 Simulation;
 
@@ -149,6 +150,6 @@ bool simulation_is_compatible(Simulation * sim, Simulation * father_sim);
 float get_gaussian(float standard_deviation);
 float inv_cdf_spf(float q, Simulation * sim); // TODO: mover a otro lado
 void init_water_n_and_boundarys(Simulation* sim);
-void initParametrosPantallaFaseFromJson(char* json, Simulation* sim);
+void initParametrosPantallaFaseFromJson(char* json_x, char* json_y, Simulation* sim);
 
 #endif

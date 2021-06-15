@@ -27,8 +27,8 @@ void run_simulation(Simulation * sim, Results * results, SimulationFile * file,
     //Init simulation n and boundary_pos array
     sim->med_boundary_pos = (float*)malloc((sim->med_layers-1)*sizeof(float));
     sim->med_n_water_variables = (float*)malloc((sim->med_layers)*sizeof(float));
-    if(strcmp(sim->phase_json,"") != 0)
-        initParametrosPantallaFaseFromJson(sim->phase_json, sim);
+    if(strcmp(sim->phase_json_x,"") != 0 && strcmp(sim->phase_json_y,"") != 0)
+        initParametrosPantallaFaseFromJson(sim->phase_json_x, sim->phase_json_y, sim);
     else
         sim->phase_layers = 0;
     // If num_photons_processed_ == NULL, then there are no photons processed

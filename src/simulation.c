@@ -31,7 +31,8 @@ typedef struct
     double * med_boundary_var_z;
     double * med_var_n_water;
     double * med_boundary_max_theta;
-    char * phase_json;
+    char * phase_json_x;
+    char * phase_json_y;
 
     double * sur_depth;
     double * sur_sigma_deg;
@@ -250,7 +251,8 @@ void get_fundamentals_from_settings(Fundamentals * fund, Settings * set)
     fund->med_attenuation = settings_get_dbl(set, "medium", "attenuation");
     fund->med_n_water = settings_get_dbl(set, "medium", "index");
     fund->med_layers = settings_get_dbl(set, "medium", "layers");  // se extrae el número de capas
-    fund->phase_json = (char*)settings_get_str(set, "medium", "phase_json");
+    fund->phase_json_x = (char*)settings_get_str(set, "medium", "phase_json_x");
+    fund->phase_json_y = (char*)settings_get_str(set, "medium", "phase_json_y");
     fund->med_boundary_var_z = settings_get_dbl(set, "medium", "varZ"); //varZ de boundary
     fund->med_var_n_water = settings_get_dbl(set, "medium", "var_n_water");  // se extrae el Var n_water
     fund->med_boundary_max_theta = settings_get_dbl(set, "medium", "boundary_max_theta"); //max theta
@@ -398,7 +400,8 @@ void get_simulation_from_fundamentals(Simulation * sim, Fundamentals * fund,
         sim->receptor_vibrating = true;
 
     sim->med_layers = (uint8_t)*fund->med_layers;  //número de capas
-    sim->phase_json = fund->phase_json;
+    sim->phase_json_x = fund->phase_json_x;
+    sim->phase_json_y = fund->phase_json_y;
     sim->med_boundary_var_z = (float)*fund->med_boundary_var_z;
     //Chequeo que varz <= distancia_entre_boundarys/2
     if(sim->med_boundary_var_z > ((sim->rec_z/sim->med_layers)/2)) sim->med_boundary_var_z = 0.99f*(sim->rec_z/sim->med_layers)/2;
@@ -588,7 +591,7 @@ void init_water_n_and_boundarys(Simulation* sim){
     }
 }
 
-void initParametrosPantallaFaseFromJson(char* json, Simulation* sim){
+void initParametrosPantallaFaseFromJson(char* json_x, char* json_y, Simulation* sim){
     //Abrir json
     GError *error;
     JsonParser* parser;
@@ -601,10 +604,10 @@ void initParametrosPantallaFaseFromJson(char* json, Simulation* sim){
     parser = json_parser_new ();
 
     error = NULL;
-    json_parser_load_from_file (parser, json, &error);
+    json_parser_load_from_file (parser, json_x, &error);
     if (error)
     {
-        g_print ("Unable to parse `%s': %s\n", json, error->message);
+        g_print ("Unable to parse `%s': %s\n", json_x, error->message);
         g_error_free (error);
         g_object_unref (parser);
     }
@@ -650,6 +653,21 @@ void initParametrosPantallaFaseFromJson(char* json, Simulation* sim){
     } 
 
     //Get Array DerivadasY
+    parser = json_parser_new ();
+
+    error = NULL;
+    json_parser_load_from_file (parser, json_y, &error);
+    if (error)
+    {
+        g_print ("Unable to parse `%s': %s\n", json_y, error->message);
+        g_error_free (error);
+        g_object_unref (parser);
+    }
+
+    //Crear el root
+    root = json_parser_get_root (parser);
+    /* manipulate the object tree and then exit */
+    listaMatrices = json_node_get_object(root);
     array = json_object_get_array_member(listaMatrices, "Dphz_dy_k_z");
 
     // Allocate memory blocks

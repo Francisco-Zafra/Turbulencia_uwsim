@@ -178,7 +178,8 @@ int main(int argc , char* argv[])
     settings_add_dbl(settings, "index", 700, DOC_700, ID_700,
                      FILENAME_HIDDEN, 1.33);
     
-    settings_add_str(settings, "phase_json", 710, DOC_710, ID_710, 0, "", NULL);
+    settings_add_str(settings, "phase_json_x", 710, DOC_710, ID_710, 0, "", NULL);
+    settings_add_str(settings, "phase_json_y", 711, DOC_711, ID_711, 0, "", NULL);
 
     settings_select_family(settings, "surface");
     settings_add_dbl(settings, "depth", 'D', DOC_D, ID_D, 0, INFINITY);
