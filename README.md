@@ -1,8 +1,10 @@
 # Turbulencia_uwsim
 
 Pantallas de fase:
-  - Resolucion en cm (no es parametro, se cambia en el codigo)
-  - Parametro --phase_json para introducir el archivo
+  - Resolucion en mm (no es parametro, se cambia en el codigo)
+  - Parametro --phase_json_x para introducir el archivo de derivadas parciales x
+  - Parametro --phase_json_y para introducir el archivo de derivadas parciales y
+  - Si no se indican alguno de los dos parametros, no se realizan pantallas de fase
 
 Se ha añadido un suelo:
   - Profundidad del suelo: --floor-depth
