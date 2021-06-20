@@ -171,8 +171,8 @@ float get_gaussian(float standard_deviation)
     {
         do
         {
-            v1 = 2 * urand();
-            v2 = 2 * urand();
+            v1 = 2 * urand() - 1;
+            v2 = 2 * urand() - 1;
             r = v1 * v1 + v2 * v2;
         }
         while (r > 1.0f);
@@ -575,8 +575,7 @@ void init_water_n_and_boundarys(Simulation* sim){
     for(int i = 0; i < sim->med_layers; i++){
         sim->med_n_water_variables[i] = sim->med_n_water;
         //sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
-        sim->med_n_water_variables[i] += get_gaussian(0.25f);
-        printf("%f\n", get_gaussian(0.25f));
+        sim->med_n_water_variables[i] += get_gaussian(sim->med_var_n_water);
 
         // sim->med_n_water_variables[i] = urand()*(1.3420-1.3412) + 1.3412;
         // sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
