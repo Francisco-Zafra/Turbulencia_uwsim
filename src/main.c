@@ -305,6 +305,14 @@ int main(int argc , char* argv[])
         sim = simulation_new_array_from_settings(settings);
         print_settings(stdout, settings);
 
+        //Leemos los json de las pantallas de fase antes de comenzar la simulacion
+        if(strcmp(sim->phase_json_x,"") != 0 && strcmp(sim->phase_json_y,"") != 0){
+            initParametrosPantallaFaseFromJson(sim->phase_json_x, sim->phase_json_y, sim);
+        }
+        else{
+            sim->phase_layers = 0;
+        }
+        
         start_status_tracking(sim->photons * sweep_length -
                               num_photons_processed);
         run_simulation(sim, results, sim_file, &num_photons_processed,
@@ -320,6 +328,23 @@ int main(int argc , char* argv[])
                              (double)num_photons_processed);
             simulation_file_overwrite_setting(sim_file, settings, ID_n);
             simulation_file_destroy(sim_file);
+        }
+
+        if(sim->phase_layers > 0){
+            //Liberamos el espacio ocupado por los arrays de las phase screens
+            free(sim->phase_layer_pos);
+            for(int i = 0; i < sim->phase_layers; i++){
+                for(int j = 0; j < sim->phase_max_x; j++){
+                    free(sim->phase_derivadasX[i][j]);
+                    free(sim->phase_derivadasY[i][j]);
+                }
+            }
+            for(int i = 0; i < sim->phase_layers; i++){
+                free(sim->phase_derivadasX[i]);
+                free(sim->phase_derivadasY[i]);
+            }
+            free(sim->phase_derivadasX);
+            free(sim->phase_derivadasY);
         }
     }
     else
