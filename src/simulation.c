@@ -574,8 +574,8 @@ void init_water_n_and_boundarys(Simulation* sim){
     //printf("------------------------------\n");
     for(int i = 0; i < sim->med_layers; i++){
         sim->med_n_water_variables[i] = sim->med_n_water;
-        //sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
-        sim->med_n_water_variables[i] += get_gaussian(sim->med_var_n_water);
+        sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
+        //sim->med_n_water_variables[i] += get_gaussian(sim->med_var_n_water);
 
         // sim->med_n_water_variables[i] = urand()*(1.3420-1.3412) + 1.3412;
         // sim->med_n_water_variables[i] += ((urand()*2-1) * sim->med_var_n_water);
