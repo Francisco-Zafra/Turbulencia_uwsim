@@ -4,3 +4,4 @@ bin/simulaciones
 bin/pantallas2.json
 bin/pantallas_dx.json
 bin/pantallas_dy.json
+.vscode/

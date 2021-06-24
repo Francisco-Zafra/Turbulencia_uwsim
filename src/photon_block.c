@@ -406,16 +406,20 @@ void photon_move(Photon * photon, Simulation * sim)
             return;
     }
 
-
-
     while(true)
     {
         // Update position
-        r = sim->med_minus_inv_c * logf(urand());
+        if(sim->med_minus_inv_c < -1e2){
+            r = 1;
+        }
+        else{
+            r = sim->med_minus_inv_c * logf(urand());
+        }
         photon->distance += r;
         photon->x += r * photon->ux;
         photon->y += r * photon->uy;
         photon->z += r * photon->uz;
+        //printf("X1: %f, Y1: %f, Z1: %f\n", photon->x, photon->y, photon->z);
 
         // Tengo >2 layers? He pasado la proxima layer?
         boundary = (photon->layer < sim->med_layers) && 
@@ -423,7 +427,7 @@ void photon_move(Photon * photon, Simulation * sim)
                     sim->med_boundary_pos[photon->layer - 1];
         
         while (boundary)    //chequeamos cambio de capa
-        {
+        {           
             //Calculate normal vector with polar and azimuthal angles
             theta = urand() * (sim->med_boundary_max_theta*M_PI/2.0f);
             //phi = get_gaussian(M_PI/2.0f);
@@ -447,7 +451,8 @@ void photon_move(Photon * photon, Simulation * sim)
             photon->x -= distance_to_boundary * photon->ux;
             photon->y -= distance_to_boundary * photon->uy;
             photon->z -= distance_to_boundary * photon->uz;
-            
+            //printf("Z: %f, BZ: %f\n", photon->z, sim->med_boundary_pos[photon->layer - 1]);
+            //printf("X: %f, Y: %f\n", photon->x, photon->y);
 
             //Calculate new photon direction
             float b = 2*n_quotient*dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z);
@@ -659,32 +664,32 @@ void photon_move(Photon * photon, Simulation * sim)
             break;
         }
 
-        // Check number of events
-        if(photon->events == sim->events_threshold)
-            break;
-        // Update number of events
-        photon->events++;
-
-        // Check rouletting threshold
-        if(photon->events >= sim->rouletting_threshold)
-        {
-            // Every 'ROULETTING_MAX_VALUE' photons, one survive
-            if(rouletting < ROULETTING_MAX_VALUE)
-            {
-                rouletting++;
+        if(sim->med_minus_inv_c > -1e2){
+            // Check number of events
+            if(photon->events == sim->events_threshold)
                 break;
-            }
-            else
+            // Update number of events
+            photon->events++;
+            // Check rouletting threshold
+            if(photon->events >= sim->rouletting_threshold)
             {
-                photon->weight *= ROULETTING_WEIGHT_INCREASE;
-                rouletting = 0;
+                // Every 'ROULETTING_MAX_VALUE' photons, one survive
+                if(rouletting < ROULETTING_MAX_VALUE && false)
+                {
+                    rouletting++;
+                    break;
+                }
+                else
+                {
+                    photon->weight *= ROULETTING_WEIGHT_INCREASE;
+                    rouletting = 0;
+                }
             }
+            // Generate scattering angles
+            float cos_theta = inv_cdf_spf(urand(), sim);
+            float phi = 2 * M_PI * urand();
+            update_photon_direction(photon, cos_theta, phi);
         }
-
-        // Generate scattering angles
-        float cos_theta = inv_cdf_spf(urand(), sim);
-        float phi = 2 * M_PI * urand();
-        update_photon_direction(photon, cos_theta, phi);
     }
 }
 

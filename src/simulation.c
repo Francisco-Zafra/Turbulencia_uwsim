@@ -475,6 +475,9 @@ void get_simulation_from_fundamentals(Simulation * sim, Fundamentals * fund,
     {
         sim->there_is_floor = true;
     }
+    else{
+        sim->there_is_floor = false;
+    }
 }
 
 
