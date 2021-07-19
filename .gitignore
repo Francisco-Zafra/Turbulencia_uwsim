@@ -1,7 +1,8 @@
 bin/master.rws
 bin/simulaciones
-.vs/
 bin/pantallas2.json
 bin/pantallas_dx.json
 bin/pantallas_dy.json
+bin/uwsim_dbg
+.vs/
 .vscode/
