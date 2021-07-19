@@ -534,8 +534,8 @@ void photon_move(Photon * photon, Simulation * sim)
                 //printf("OUT %d\n", photon->phase_layer);
                 return;
             }
-            ux_exit = photon->ux + sim->phase_derivadasX[photon->phase_layer - 1][valX][valY];
-            uy_exit = photon->uy + sim->phase_derivadasY[photon->phase_layer - 1][valX][valY];
+            ux_exit = photon->ux + sim->phase_resolution*sim->phase_derivadasX[photon->phase_layer - 1][valX][valY];
+            uy_exit = photon->uy + sim->phase_resolution*sim->phase_derivadasY[photon->phase_layer - 1][valX][valY];
             uz_exit = sqrt(1 - pow(ux_exit,2) - pow(uy_exit,2));
             photon->phase_layer += 1;
 
