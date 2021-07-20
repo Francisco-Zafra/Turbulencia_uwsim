@@ -462,10 +462,11 @@ void photon_move(Photon * photon, Simulation * sim)
             ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
             uy_exit = n_quotient * photon->uy + beta * boundary_normal_y;
             uz_exit = n_quotient * photon->uz + beta * boundary_normal_z;
-            if ((dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z)>0 &&
-                dot_product(ux_exit,uy_exit,uz_exit,boundary_normal_x,boundary_normal_y,boundary_normal_z)<0) ||
-                (dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z)<0 &&
-                dot_product(ux_exit,uy_exit,uz_exit,boundary_normal_x,boundary_normal_y,boundary_normal_z)>0))
+            // if ((dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z)>0 &&
+            //     dot_product(ux_exit,uy_exit,uz_exit,boundary_normal_x,boundary_normal_y,boundary_normal_z)<0) ||
+            //     (dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z)<0 &&
+            //     dot_product(ux_exit,uy_exit,uz_exit,boundary_normal_x,boundary_normal_y,boundary_normal_z)>0))
+            if (dot_product(photon->ux,photon->uy,photon->uz, ux_exit,uy_exit,uz_exit) < 0)
             {
                 beta = (-b - sqrtf(powf(b,2) - 4*c)) / 2;
                 ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
