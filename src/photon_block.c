@@ -456,7 +456,7 @@ void photon_move(Photon * photon, Simulation * sim)
 
             //Calculate new photon direction
             float b = 2*n_quotient*dot_product(photon->ux,photon->uy,photon->uz,boundary_normal_x,boundary_normal_y,boundary_normal_z);
-            float c = 1 - powf(n_quotient, 2.0f);
+            float c = powf(n_quotient, 2.0f) - 1;
 
             beta = (-b + sqrtf(powf(b,2) - 4*c)) / 2;        
             ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
