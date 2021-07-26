@@ -6,3 +6,5 @@ bin/pantallas_dy.json
 bin/uwsim_dbg
 .vs/
 .vscode/
+bin/master.json
+src/ master.rws
