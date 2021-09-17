@@ -8,3 +8,7 @@ bin/uwsim_dbg
 .vscode/
 bin/master.json
 src/ master.rws
+ master.json
+.gitignore
+bin/simular.sh
+bin/salida.json

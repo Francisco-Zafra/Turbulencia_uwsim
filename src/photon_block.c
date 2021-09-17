@@ -346,6 +346,7 @@ void photon_move(Photon * photon, Simulation * sim)
     float ux_exit, uy_exit, uz_exit;
     float beta;
     float rp,rs,R,T;
+    float scapeValue = 0; //Si no hay absorcion, me aseguro de eliminar fotones perdidos
 
     // This initialization is important in the cases when there is surface but
     // not rotation is required
@@ -420,21 +421,19 @@ void photon_move(Photon * photon, Simulation * sim)
         photon->y += r * photon->uy;
         photon->z += r * photon->uz;
         //printf("X1: %f, Y1: %f, Z1: %f\n", photon->x, photon->y, photon->z);
+        //Calculate normal vector with polar and azimuthal angles
 
         // Tengo >2 layers? He pasado la proxima layer?
-        boundary = (photon->layer < sim->med_layers) && 
-                    dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
-                    sim->med_boundary_pos[photon->layer - 1];
-        
+        boundary = (photon->layer < sim->med_layers) && photon->z > sim->med_boundary_pos[photon->layer - 1];
         while (boundary)    //chequeamos cambio de capa
-        {           
-            //Calculate normal vector with polar and azimuthal angles
+        { 
+
             theta = urand() * (sim->med_boundary_max_theta*M_PI/2.0f);
             //phi = get_gaussian(M_PI/2.0f);
             phi = urand() * (2.0f * M_PI);
             boundary_normal_x = cosf(phi)*sinf(theta);
             boundary_normal_y = sinf(phi)*sinf(theta);
-            boundary_normal_z = cosf(theta);
+            boundary_normal_z = cosf(theta);        
 
             //Calcualte n quotient
             n_quotient=sim->med_n_water_variables[photon->layer]/sim->med_n_water_variables[photon->layer-1];
@@ -447,6 +446,7 @@ void photon_move(Photon * photon, Simulation * sim)
 
             // Bring back photon to boundary position
             distance_to_boundary = (photon->z-sim->med_boundary_pos[photon->layer - 1]) / photon->uz;
+
             //printf("Distancia: %f\n", distance_to_boundary);
             photon->x -= distance_to_boundary * photon->ux;
             photon->y -= distance_to_boundary * photon->uy;
@@ -470,6 +470,7 @@ void photon_move(Photon * photon, Simulation * sim)
                 if (dot_product(photon->ux,photon->uy,photon->uz, ux_exit,uy_exit,uz_exit) < 0)
                 {
                     beta = (-b - sqrtf(powf(b,2) - 4*c)) / 2;
+                    if(isnanf(beta)) return;
                     ux_exit = n_quotient * photon->ux + beta * boundary_normal_x;
                     uy_exit = n_quotient * photon->uy + beta * boundary_normal_y;
                     uz_exit = n_quotient * photon->uz + beta * boundary_normal_z;        
@@ -504,14 +505,11 @@ void photon_move(Photon * photon, Simulation * sim)
             photon->x += distance_to_boundary * photon->ux;
             photon->y += distance_to_boundary * photon->uy;
             photon->z += distance_to_boundary * photon->uz;
-
             //printf("coordenada z del fotón %5.2f\n",photon->z);
             //printf("capa %d\n",photon->layer);
 
             //Por si me he saltado varias layers
-            boundary = (photon->layer < sim->med_layers) && 
-                        dot_product(photon->x, photon->y, photon->z, boundary_normal_x, boundary_normal_y ,boundary_normal_z) > 
-                        sim->med_boundary_pos[photon->layer - 1];
+            boundary = (photon->layer < sim->med_layers) && photon->z > sim->med_boundary_pos[photon->layer - 1];
         }
         //Checkeamos si nos hemos cruzado pantallas de fase
         phase_layer = (photon->phase_layer < sim->phase_layers) && photon->z > sim->phase_layer_pos[photon->phase_layer - 1];
@@ -692,6 +690,12 @@ void photon_move(Photon * photon, Simulation * sim)
             float cos_theta = inv_cdf_spf(urand(), sim);
             float phi = 2 * M_PI * urand();
             update_photon_direction(photon, cos_theta, phi);
+        }
+        else{
+            scapeValue++;
+            if(scapeValue > 1000){
+                break;
+            }
         }
     }
 }
